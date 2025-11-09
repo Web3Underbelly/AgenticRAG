@@ -1,0 +1,4 @@
+Device_Name,Model_Number,Manufacturer,Indications_for_Use,Contraindications
+"Dialysis Machine","Model 1703","Edwards Lifesciences","Provides intraoperative monitoring support during complex oncological surgeries.","Avoid use when severe peripheral vascular disease or open wounds are present."
+"Dialysis Machine","Plus593","Siemens Healthineers","Supports emergency tissue biopsy workflows for acute metabolic complications.","None"
+"Dialysis Machine","Max384","BioMérieux","Delivers continuous monitoring assistance for geriatric long-term care patients.","Do not use with patients receiving radioactive materials or with cardiomyopathy."
