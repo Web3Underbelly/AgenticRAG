@@ -10,11 +10,13 @@ that can be executed locally with small sample datasets.
 - **Traditional RAG workflow** that always queries the medical Q&A vector store.
 - **Agentic RAG workflow** that dynamically routes between medical Q&A,
   medical device manuals, and a web search tool before generating the final
-  answer.
+  answer. The router is resilient to LLM drift and gracefully handles empty
+  retrieval results by falling back to web search when necessary.
 - **Composable LangGraph graphs** that can be embedded in applications or run as
   standalone scripts.
 - **ChromaDB vector stores** populated with lightweight CSV samples to keep the
-  project self-contained.
+  project self-contained. Collections are upserted so repeated runs against the
+  same persistent database stay idempotent.
 
 ## Project Structure
 
@@ -55,7 +57,9 @@ that can be executed locally with small sample datasets.
 3. **Run the demonstration script**
 
    The example below compares the simple and agentic workflows. It assumes that
-   environment variables from the previous step have been configured.
+   environment variables from the previous step have been configured. Provide a
+   search tool when you want to enable the agentic branch; otherwise the app
+   operates in simple RAG-only mode.
 
    ```python
    from pathlib import Path

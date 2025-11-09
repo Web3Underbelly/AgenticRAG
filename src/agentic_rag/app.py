@@ -49,15 +49,22 @@ class AgenticRAGApp:
             word_limit=word_limit,
         ).compile()
 
-        self._agentic_graph = build_agentic_rag(
-            self._qa_collection,
-            self._device_collection,
-            self._llm,
-            search_tool=self._search,
-            n_results=n_results,
-            word_limit=word_limit,
-            max_iterations=max_iterations,
-        ).compile()
+        self._agentic_graph: Optional[CompiledGraph]
+        if self._search is None:
+            logger.warning(
+                "Agentic workflow disabled because no search tool was provided."
+            )
+            self._agentic_graph = None
+        else:
+            self._agentic_graph = build_agentic_rag(
+                self._qa_collection,
+                self._device_collection,
+                self._llm,
+                search_tool=self._search,
+                n_results=n_results,
+                word_limit=word_limit,
+                max_iterations=max_iterations,
+            ).compile()
 
     @property
     def simple_graph(self) -> CompiledGraph:
@@ -65,13 +72,18 @@ class AgenticRAGApp:
 
     @property
     def agentic_graph(self) -> CompiledGraph:
+        if self._agentic_graph is None:
+            raise RuntimeError(
+                "Agentic workflow is not available because no search tool was "
+                "supplied during initialisation."
+            )
         return self._agentic_graph
 
     def ask_simple(self, query: str) -> SimpleGraphState:
         return self._simple_graph.invoke({"query": query})
 
     def ask_agentic(self, query: str) -> AgenticGraphState:
-        return self._agentic_graph.invoke({"query": query})
+        return self.agentic_graph.invoke({"query": query})
 
 
 __all__ = ["AgenticRAGApp"]

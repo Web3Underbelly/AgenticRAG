@@ -28,7 +28,11 @@ class SerperSearch:
 
     def __call__(self, query: str) -> str:
         logger.debug("Running Serper search for query: %s", query)
-        result = self._wrapper.run(query=query)
+        try:
+            result = self._wrapper.run(query=query)
+        except Exception as exc:  # pragma: no cover - network failures
+            logger.error("Serper search failed: %s", exc)
+            return "Serper search request could not be completed."
         if isinstance(result, str):
             return result
         return json.dumps(result)

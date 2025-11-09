@@ -91,6 +91,21 @@ def build_agentic_rag(
     llm_callable = ensure_callable(llm)
     search_callable = ensure_search_callable(search_tool)
 
+    def _normalise_router_decision(decision: str) -> str:
+        lowered = decision.strip().lower()
+        mapping = {
+            "retrieve_qna": "Retrieve_QnA",
+            "retrieve qna": "Retrieve_QnA",
+            "retrieve_device": "Retrieve_Device",
+            "retrieve device": "Retrieve_Device",
+            "web_search": "Web_Search",
+            "web search": "Web_Search",
+        }
+        for key, value in mapping.items():
+            if key in lowered:
+                return value
+        return "Web_Search"
+
     def router(state: AgenticGraphState) -> AgenticGraphState:
         query = state["query"]
         decision_prompt = (
@@ -102,7 +117,8 @@ def build_agentic_rag(
             f"Query: \"{query}\"\n"
             "Respond ONLY with one of: Retrieve_QnA, Retrieve_Device, Web_Search"
         )
-        decision = llm_callable(decision_prompt).strip()
+        decision_raw = llm_callable(decision_prompt)
+        decision = _normalise_router_decision(decision_raw)
         logger.debug("Router decision: %s", decision)
         return {**state, "source": decision}
 
@@ -120,12 +136,23 @@ def build_agentic_rag(
 
     def perform_web_search(state: AgenticGraphState) -> AgenticGraphState:
         query = state["query"]
-        result = search_callable(query)
+        try:
+            result = search_callable(query)
+        except Exception as exc:  # pragma: no cover - network failures
+            logger.error("Search tool failed: %%s", exc)
+            result = (
+                "Web search failed during execution. Please retry later or "
+                "verify the search tool configuration."
+            )
         return {**state, "context": result, "source": "Web_Search"}
 
     def relevance_checker(state: AgenticGraphState) -> AgenticGraphState:
         context = state.get("context", "")
         query = state["query"]
+        if not context.strip():
+            logger.debug("Empty context detected; marking as not relevant.")
+            iteration = state.get("iteration_count", 0) + 1
+            return {**state, "is_relevant": "No", "iteration_count": iteration}
         prompt = (
             "Check whether the context answers the user query.\n"
             "Context:\n"

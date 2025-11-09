@@ -24,7 +24,11 @@ class VectorStoreBuilder:
         collection = self._client.get_or_create_collection(name=name)
         docs = list(documents)
         ensure_documents(docs)
-        collection.add(
+
+        # ``upsert`` avoids duplicate-ID errors when the application is
+        # initialised repeatedly against the same persistent database, which is
+        # common during iterative development.
+        collection.upsert(
             ids=[doc.identifier for doc in docs],
             documents=[doc.text for doc in docs],
             metadatas=[doc.metadata for doc in docs],
